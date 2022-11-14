@@ -1,0 +1,17 @@
+{
+  "name": "attachment-gallery",
+  "label": "Attachment gallery",
+  "type": "widget",
+  "version": "1.9.0",
+  "exbVersion": "1.9.0",
+  "author": "Raluca Nicola",
+  "description": "This widget retrieves all the attachments of a feature layer and displays them in a gallery.",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "properties": {},
+  "translatedLocales": ["en"],
+  "defaultSize": {
+    "width": 600,
+    "height": 300
+  }
+}
