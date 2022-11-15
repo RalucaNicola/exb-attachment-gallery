@@ -23,18 +23,19 @@ const Image = styled.img`
 export default function (props: AllWidgetProps<WidgetProps>) {
 
   const [attachments, setAttachments] = useState(null);
+  const [dataSource, setDataSource] = useState(null);
   const { useDataSources } = props;
 
   // query for new data only when the data source changes
   useEffect(() => {
     if (useDataSources && useDataSources.length > 0) {
       const dsManager = DataSourceManager.getInstance();
-      const dataSource: FeatureLayerDataSource = dsManager.getDataSource(useDataSources[0].dataSourceId) as FeatureLayerDataSource;
-      if (dataSource && dataSource.layer) {
-        console.log("Running queries");
+      const ds: FeatureLayerDataSource = dsManager.getDataSource(useDataSources[0].dataSourceId) as FeatureLayerDataSource;
+      if (ds && ds.layer) {
+        setDataSource(ds);
         Promise.all([
-          dataSource.layer.queryAttachments({ where: "1=1" }),
-          dataSource.layer.queryFeatures({ where: "1=1", outFields: ["CreationDate", "objectid"], orderByFields: ["CreationDate DESC"] })
+          ds.layer.queryAttachments({ where: "1=1" }),
+          ds.layer.queryFeatures({ where: "1=1", outFields: ["CreationDate", "objectid"], orderByFields: ["CreationDate DESC"] })
         ]).then(results => {
           const [attachmentResults, featureResults] = results;
           let attachmentList = [];
@@ -45,23 +46,27 @@ export default function (props: AllWidgetProps<WidgetProps>) {
               attachmentList.push({ id, featureid, url, size, date });
             }
           });
-          console.log(attachmentList);
           setAttachments(attachmentList);
         })
           .catch((error) => { setAttachments(null); throw (error); })
+      } else {
+        setDataSource(null);
       }
     } else {
       setAttachments(null);
     }
   }, [useDataSources]);
 
+  const selectRecord = (id) => {
+    dataSource.selectRecordById(id);
+  }
 
   return (
     <div className="widget-get-map-coordinates jimu-widget p-2">
       {attachments ?
         (<Gallery>
-          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => {
-            return (<Image src={attachments[i].url}></Image>)
+          {attachments.slice(0, 10).map((attachment) => {
+            return (<Image src={attachment.url} onClick={() => selectRecord(attachment.featureid)}></Image>)
           })
           }
         </Gallery>)
