@@ -8,6 +8,7 @@
   "description": "This widget retrieves all the attachments of a feature layer and displays them in a gallery.",
   "copyright": "",
   "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "publishMessages": ["DATA_RECORDS_SELECTION_CHANGE"],
   "properties": {},
   "translatedLocales": ["en"],
   "defaultSize": {

@@ -62,8 +62,8 @@ export default function (props: AllWidgetSettingProps<WidgetSettingProps>) {
               useDataSourcesEnabled
               mustUseDataSource
               useDataSources={props.useDataSources}
-              onChange={onDataSourceChange} widgetId={props.id}
-              hideDataView={true}
+              onChange={onDataSourceChange}
+              widgetId={props.id}
             />
 
           </SettingRow>
