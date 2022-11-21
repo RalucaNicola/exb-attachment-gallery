@@ -62,7 +62,10 @@ export default function (props: AllWidgetProps<WidgetProps>) {
     //   });
     // }
     return (
-      attachments && ds.getStatus() === DataSourceStatus.Loaded ? <Gallery>
+      // if I add the check for the data source status to be loaded, this component never renders
+      //attachments && ds.getStatus() === DataSourceStatus.Loaded ? <Gallery>
+      // but if I don't add it, then the data source doesn't contain any records
+      attachments ? <Gallery>
         {attachments.slice(0, 10).map((attachment) => {
           return (<Image src={attachment.url} onClick={() => {
             const id = attachment.featureid.toString();
