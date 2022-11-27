@@ -31,8 +31,6 @@ export default function (props: AllWidgetSettingProps<WidgetSettingProps>) {
 
   const supportedDsTypes = Immutable([AllDataSourceTypes.FeatureLayer]);
 
-  console.log("Props for settings", props);
-
   // When the dataSource is chosen, save it to the settings.
   const onDataSourceChange = (useDataSources: UseDataSource[]) => {
     if (!useDataSources) {
