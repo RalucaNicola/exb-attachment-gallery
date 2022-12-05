@@ -6,15 +6,14 @@ import { setDataSourcePreloadData } from "jimu-core/lib/app-actions";
 import { styled } from "jimu-theme";
 import { Button, Loading, LoadingType, WidgetPlaceholder } from "jimu-ui";
 import { useEffect, useRef, useState } from "react";
+import { ImageCard } from "./components/image-card";
 const alertIcon = require("./assets/alert.svg");
 import defaultMessages from "./translations/default";
+import { formatDate } from "./utils/utils";
 
 const pageSize = 100;
 
-const formatDate = (ms) => {
-  const date = new Date(ms);
-  return new Intl.DateTimeFormat('ca-iso8601', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(date);
-}
+
 
 const Container = styled.div`
   height: 100%;
@@ -28,43 +27,33 @@ const Gallery = styled.div`
   mouse-wheel:horizontal;
 `;
 
-const ImageContainer = styled.div`
-  position: relative;
-`;
-
-const ImageCaption = styled.p`
-  position: absolute;
-  bottom: 3px;
-  left: 0;
-  right: 0;
-  background-color: rgba(255, 255, 255, 0.6);
-  color: black;
-  text-align: center;
-  padding: 10px 5px;
-`
-
-const Image = styled.img`
-  height: 100%;
-  min-width: 200px;
-`;
 
 export default function (props: AllWidgetProps<WidgetProps>) {
 
-  const [recsWithAttach, setRecsWithAttach] = useState(null);
-  const [loadedDS, setLoadedDS] = useState(false);
   const [sortField, setSortField] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const galleryRef = useRef<HTMLDivElement>(null);
+  const [dataSource, setDataSource] = useState(null);
+  const [records, setRecords] = useState([]);
+  const [count, setCount] = useState(null);
+
+
+  useEffect(() => {
+    if (dataSource) {
+      let sortField = null;
+      const queryParams = dataSource.getCurrentQueryParams();
+      if (queryParams.orderByFields && queryParams.orderByFields.length > 0) {
+        sortField = queryParams.orderByFields[0].split(" ")[0];
+        setSortField(sortField);
+      }
+      dataSource.query({ outFields: ["objectid", "Title", sortField], returnGeometry: true }).then(result => {
+        setCount(result.records.length);
+        setRecords(result.records);
+      });
+    }
+  }, [dataSource]);
 
   const dsConfigured = props.useDataSources && props.useDataSources.length > 0;
-
-  const getAttachments = (records) => {
-    Promise.all(records.map((r) => r.queryAttachments()))
-      .then(() => {
-        setRecsWithAttach(records);
-      })
-  }
 
   const scrollIntoView = id => {
     const galleryNode = galleryRef.current;
@@ -77,10 +66,8 @@ export default function (props: AllWidgetProps<WidgetProps>) {
   }
 
   // no info about data source
-  const handleDsInfoChange = (info, preinfo) => {
-    // console.log("Data source status on info change", info);
-    if (info.selectedIds && info.selectedIds.length > 0 && info.selectedIds !== selectedId) {
-      console.log(info);
+  const handleDsInfoChange = (info) => {
+    if (info.selectedIds && info.selectedIds.length > 0 && info.selectedIds[0] !== selectedId) {
       setSelectedId(info.selectedIds[0]);
       scrollIntoView(info.selectedIds[0]);
     }
@@ -88,53 +75,40 @@ export default function (props: AllWidgetProps<WidgetProps>) {
 
   // this gets called only once and the records are still loading in the data
   const handleDsCreated = (ds: FeatureLayerDataSource) => {
-    // console.log("Data source status after creation", ds);
     if (ds) {
-      const queryParams = ds.getCurrentQueryParams();
-      if (queryParams.orderByFields && queryParams.orderByFields.length > 0) {
-        setSortField(queryParams.orderByFields[0].split(" ")[0]);
-      }
+      setDataSource(ds);
     }
   }
 
-  const dataRender = (ds: DataSource) => {
-    console.log("Data source status from data render", ds.getStatus(), loadedDS);
-    if (ds && ds.getStatus() === DataSourceStatus.Loaded) {
-      setLoadedDS(true);
-      if (!loadedDS) {
-        //const recs = ds.getRecordsByPage(currentPage, pageSize);
-        const recs = ds.getRecords();
-        console.log("Re-rendering images", recs);
-        getAttachments(recs);
-      }
-    } else {
-      setLoadedDS(false);
-    }
+  const dataRender = (ds: FeatureLayerDataSource) => {
     return (
-      recsWithAttach ? <Container> <Gallery ref={galleryRef}>
-        {recsWithAttach.map((r) => {
-          const recordId = r.getId();
-          return (
-            <ImageContainer
-              key={recordId}
-              data-id={recordId}
-              style={selectedId === recordId ? { border: "3px solid rgba(0, 0, 255, 0.4)" } : {}}
-            >
-              <Image
-                src={r.attachmentInfos[0].url}
+      records ?
+        <Container> <Gallery ref={galleryRef}>
+          {records.map((record) => {
+            const recordId = record.getId();
+            return (
+              <ImageCard
+                record={record}
+                selected={selectedId === recordId}
                 onClick={() => {
                   ds.selectRecordById(recordId);
-                  MessageManager.getInstance().publishMessage(new DataRecordsSelectionChangeMessage(props.id, [r]));
+                  MessageManager.getInstance().publishMessage(new DataRecordsSelectionChangeMessage(props.id, [record]));
                 }}
-              ></Image>
-              <ImageCaption>Last created: {formatDate(r.feature.attributes[sortField])}</ImageCaption>
-            </ImageContainer>
-          )
-        })}
-
-      </Gallery><p>Last updated: {formatDate(ds.lastRefreshTime)}</p></Container> :
-        <Loading type={LoadingType.Secondary}></Loading>
-    )
+                sortField={sortField}
+                addRecord={(record) => {
+                  const sourceRecords = ds.getSourceRecords();
+                  ds.setSourceRecords(sourceRecords.concat([record]));
+                  console.log(sourceRecords.length);
+                }}
+              ></ImageCard>
+            )
+          })})
+        </Gallery>
+          {ds.lastRefreshTime ? <p>
+            {count} features last updated at {formatDate(ds.lastRefreshTime)}</p> : <div></div>}
+        </Container>
+        :
+        <Loading type={LoadingType.Secondary}></Loading>)
   }
 
   return (
@@ -142,7 +116,6 @@ export default function (props: AllWidgetProps<WidgetProps>) {
       {dsConfigured ?
         (<DataSourceComponent
           useDataSource={props.useDataSources[0]}
-          query={{ returnGeometry: true, pageSize } as FeatureLayerQueryParams}
           onDataSourceInfoChange={handleDsInfoChange}
           onDataSourceCreated={handleDsCreated}
           widgetId={props.id}
