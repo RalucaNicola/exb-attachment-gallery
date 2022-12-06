@@ -67,6 +67,7 @@ export default function (props: AllWidgetProps<WidgetProps>) {
 
   // no info about data source
   const handleDsInfoChange = (info) => {
+    console.log(info);
     if (info.selectedIds && info.selectedIds.length > 0 && info.selectedIds[0] !== selectedId) {
       setSelectedId(info.selectedIds[0]);
       scrollIntoView(info.selectedIds[0]);
@@ -91,15 +92,15 @@ export default function (props: AllWidgetProps<WidgetProps>) {
                 record={record}
                 selected={selectedId === recordId}
                 onClick={() => {
-                  ds.selectRecordById(recordId);
+                  ds.selectRecordById(recordId, record);
                   MessageManager.getInstance().publishMessage(new DataRecordsSelectionChangeMessage(props.id, [record]));
                 }}
                 sortField={sortField}
-                addRecord={(record) => {
-                  const sourceRecords = ds.getSourceRecords();
-                  ds.setSourceRecords(sourceRecords.concat([record]));
-                  console.log(sourceRecords.length);
-                }}
+              // addRecord={(record) => {
+              //   const sourceRecords = ds.getSourceRecords();
+              //   ds.setSourceRecords(sourceRecords.concat([record]));
+              //   console.log(sourceRecords.length);
+              // }}
               ></ImageCard>
             )
           })})

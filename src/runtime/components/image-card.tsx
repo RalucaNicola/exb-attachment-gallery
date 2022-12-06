@@ -44,7 +44,7 @@ const useIntersection = (element, rootMargin) => {
 };
 
 export function ImageCard(props) {
-  const { record, onClick, selected, sortField, addRecord } = props;
+  const { record, onClick, selected, sortField } = props;
   const recordId = record.getId();
 
   const [imgSrc, setImgSrc] = useState(null);
@@ -55,7 +55,6 @@ export function ImageCard(props) {
     if ((inViewport) && !imgSrc) {
       record.queryAttachments()
         .then(record => setImgSrc(record[0].url));
-      addRecord(record);
     }
   }, [inViewport]);
 
